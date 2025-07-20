@@ -5,7 +5,7 @@ import tempfile
 from scipy.io.wavfile import write
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-#from therapist import EnhancedOmaniTherapyApp, Config
+from therapist import EnhancedOmaniTherapyApp, Config
 
 app = FastAPI()
 omaniTherapyApp = EnhancedOmaniTherapyApp(Config())
