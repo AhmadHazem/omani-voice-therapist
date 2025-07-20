@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  therapist-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: therapist.azurecr.io/omani-voice-therapist:latest
+    env_file:
+      - .env
+    ports:
+      - "7000:7000"
