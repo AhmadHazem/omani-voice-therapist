@@ -141,11 +141,6 @@ class Config:
             "{\"use_cbt\": true/false, \"cbt_technique\": \"اسم التقنية المناسبة أو null\", \"reasoning\": \"سبب القرار باللغة العربية\", \"severity\": \"low/medium/high\"}\n"
         )
         
-        self.whisper_prompt = (
-            "نسخ الصوت بالعربية والإنجليزية كما هو منطوق."
-            "You may recieve English Words or Phrases in the Audio, so you should transcribe them in English."
-        )
-        
         self.risk_assessor_system_prompt = (
             "You are an Omani culturally sensitive mental health assistant trained to assess emotional risk levels "
             "based on user expressions. Your job is to produce a JSON response with the following keys:\n"
@@ -582,7 +577,6 @@ class WhisperTranscriber:
             buffer.close()  # Close the buffer after use
             return transcript
         except Exception as e:
-            buffer.close()  # Ensure buffer is closed on error
             logger.warning(f"⚠️ Whisper transcription failed: {e}")
             return "فشل في التسجيل"
 
