@@ -5,7 +5,7 @@ import tempfile
 from scipy.io.wavfile import write
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from therapist import EnhancedOmaniTherapyApp, Config
+#from therapist import EnhancedOmaniTherapyApp, Config
 
 app = FastAPI()
 omaniTherapyApp = EnhancedOmaniTherapyApp(Config())
@@ -14,6 +14,7 @@ class AppState:
     stream: np.ndarray | None = None
     sampling_rate: int = 0
     conversation: list = []
+    emergency_contacts: list = []
     lock = False  # To prevent concurrent access issues
 
 def process_audio(audio, state):
@@ -47,6 +48,38 @@ def response(state):
     
     return audio, state, state.conversation
 
+def add_emergency_contact(email, state):
+    """Add an emergency contact email to the state"""
+    if email and email.strip():
+        email = email.strip()
+        if email not in state.emergency_contacts:
+            state.emergency_contacts.append(email)
+            omaniTherapyApp.add_emergency_contact(state.emergency_contacts)
+            return "", state, format_contact_list(state.emergency_contacts), gr.update(visible=True)
+    return email, state, format_contact_list(state.emergency_contacts), gr.update(visible=len(state.emergency_contacts) > 0)
+
+def remove_emergency_contact(contact_to_remove, state):
+    """Remove an emergency contact email from the state"""
+    if contact_to_remove in state.emergency_contacts:
+        state.emergency_contacts.remove(contact_to_remove)
+        omaniTherapyApp.remove_emergency_contact(state.emergency_contacts)
+    return state, format_contact_list(state.emergency_contacts), gr.update(visible=len(state.emergency_contacts) > 0)
+
+def format_contact_list(contacts):
+    """Format the emergency contacts list for display"""
+    if not contacts:
+        return "لم يتم إضافة أي جهات اتصال طوارئ بعد | No emergency contacts added yet"
+    
+    formatted = "📧 جهات الاتصال للطوارئ | Emergency Contacts:\n"
+    for i, contact in enumerate(contacts, 1):
+        formatted += f"{i}. {contact}\n"
+    return formatted
+
+def clear_conversation(state):
+    """Clear the conversation history"""
+    state.conversation = []
+    return state, []
+
 # Custom CSS for better Arabic support and styling
 custom_css = """
 .gradio-container {
@@ -74,6 +107,16 @@ custom_css = """
     font-weight: bold;
 }
 
+.emergency-section {
+    background: linear-gradient(90deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
 .instructions {
     background: #f8f9ff;
     border: 2px dashed #667eea;
@@ -81,6 +124,25 @@ custom_css = """
     padding: 15px;
     margin: 10px 0;
     text-align: center;
+}
+
+.emergency-info {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.contact-list {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 5px 0;
+    font-family: monospace;
+    white-space: pre-line;
 }
 
 .footer-note {
@@ -106,6 +168,14 @@ custom_css = """
     padding: 15px;
     background: linear-gradient(145deg, #f5f7fa, #c3cfe2);
 }
+
+/* Emergency contact styling */
+.emergency-container {
+    border: 2px solid #ff6b6b;
+    border-radius: 15px;
+    padding: 15px;
+    background: linear-gradient(145deg, #fff5f5, #ffe8e8);
+}
 """
 
 with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذكي | AI Therapist", theme=gr.themes.Soft()) as demo:
@@ -119,6 +189,44 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         <p>🌟 مساعدك الشخصي للصحة النفسية والاستشارة | Your Personal Mental Health Companion</p>
     </div>
     """)
+    
+    # Emergency contacts section (at the top for visibility)
+    gr.HTML("""<div class="emergency-section">🚨 جهات الاتصال للطوارئ | Emergency Contacts</div>""")
+    
+    with gr.Row():
+        with gr.Column():
+            gr.HTML("""
+            <div class="emergency-info">
+                <p><strong>⚠️ مهم:</strong> أضف جهات اتصال يمكن التواصل معها في حالات الطوارئ</p>
+                <p><strong>⚠️ Important:</strong> Add contacts that can be reached in emergency situations</p>
+            </div>
+            """)
+            
+            with gr.Row():
+                emergency_email_input = gr.Textbox(
+                    label="📧 إضافة بريد إلكتروني للطوارئ | Add Emergency Email",
+                    placeholder="example@email.com",
+                    elem_classes=["emergency-container"]
+                )
+                add_contact_btn = gr.Button("➕ إضافة | Add", variant="primary")
+    
+    with gr.Row():
+        with gr.Column():
+            contact_list_display = gr.Textbox(
+                label="📋 قائمة جهات الاتصال | Contact List",
+                value="لم يتم إضافة أي جهات اتصال طوارئ بعد | No emergency contacts added yet",
+                interactive=False,
+                lines=3,
+                elem_classes=["contact-list"]
+            )
+            
+            remove_contact_dropdown = gr.Dropdown(
+                label="🗑️ حذف جهة اتصال | Remove Contact",
+                choices=[],
+                visible=False,
+                elem_classes=["emergency-container"]
+            )
+            remove_contact_btn = gr.Button("🗑️ حذف | Remove", variant="secondary", visible=False)
     
     with gr.Row():
         with gr.Column(scale=1):
@@ -158,13 +266,23 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         with gr.Column(scale=2):
             # Conversation section
             gr.HTML("""<div class="section-header">💬 سجل المحادثة | Conversation History</div>""")
-            chatbot = gr.Chatbot(
-                label="📝 المحادثة | Conversation",
-                height=400,
-                show_label=False,
-                elem_id="chatbot",
-                rtl=True
-            )
+            
+            with gr.Row():
+                with gr.Column(scale=4):
+                    chatbot = gr.Chatbot(
+                        label="📝 المحادثة | Conversation",
+                        height=350,
+                        show_label=False,
+                        elem_id="chatbot",
+                        rtl=True
+                    )
+                with gr.Column(scale=1):
+                    clear_chat_btn = gr.Button(
+                        "🗑️ مسح المحادثة\nClear Chat", 
+                        variant="secondary",
+                        elem_classes=["emergency-container"],
+                        size="sm"
+                    )
     
     # Footer with additional info
     gr.HTML("""
@@ -173,10 +291,48 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         <p><strong>🔒 Privacy:</strong> All conversations are confidential and secure</p>
         <p><strong>⚠️ تنبيه:</strong> هذا مساعد ذكي وليس بديلاً عن العلاج النفسي المتخصص</p>
         <p><strong>⚠️ Disclaimer:</strong> This is an AI assistant and not a replacement for professional therapy</p>
+        <p><strong>🚨 في حالات الطوارئ:</strong> إذا كنت تواجه أفكار إيذاء النفس، اتصل فوراً بخدمات الطوارئ المحلية</p>
+        <p><strong>🚨 Emergency:</strong> If you're having thoughts of self-harm, contact local emergency services immediately</p>
     </div>
     """)
     
-    # Event handlers (unchanged)
+    # Event handlers for emergency contacts
+    add_contact_btn.click(
+        fn=add_emergency_contact,
+        inputs=[emergency_email_input, state],
+        outputs=[emergency_email_input, state, contact_list_display, remove_contact_dropdown]
+    ).then(
+        fn=lambda state: gr.update(choices=state.emergency_contacts, visible=len(state.emergency_contacts) > 0),
+        inputs=[state],
+        outputs=[remove_contact_dropdown]
+    ).then(
+        fn=lambda state: gr.update(visible=len(state.emergency_contacts) > 0),
+        inputs=[state],
+        outputs=[remove_contact_btn]
+    )
+    
+    remove_contact_btn.click(
+        fn=remove_emergency_contact,
+        inputs=[remove_contact_dropdown, state],
+        outputs=[state, contact_list_display, remove_contact_dropdown]
+    ).then(
+        fn=lambda state: gr.update(choices=state.emergency_contacts, visible=len(state.emergency_contacts) > 0),
+        inputs=[state],
+        outputs=[remove_contact_dropdown]
+    ).then(
+        fn=lambda state: gr.update(visible=len(state.emergency_contacts) > 0),
+        inputs=[state],
+        outputs=[remove_contact_btn]
+    )
+    
+    # Clear conversation handler
+    clear_chat_btn.click(
+        fn=clear_conversation,
+        inputs=[state],
+        outputs=[state, chatbot]
+    )
+    
+    # Original event handlers (unchanged)
     input_audio.stream(
         process_audio, 
         [input_audio, state], 

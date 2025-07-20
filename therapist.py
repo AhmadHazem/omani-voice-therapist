@@ -143,6 +143,7 @@ class Config:
         
         self.whisper_prompt = (
             "نسخ الصوت بالعربية والإنجليزية كما هو منطوق."
+            "Transcribe the audio in Arabic and English as spoken."
             "You may recieve English Words or Phrases in the Audio, so you should transcribe them in English."
         )
         
@@ -579,11 +580,10 @@ class WhisperTranscriber:
                 timeout=10
             )
 
-            # clear buffer
-            buffer.close()
-            logger.info("📝 Transcript received from stream.")
+            buffer.close()  # Close the buffer after use
             return transcript
         except Exception as e:
+            buffer.close()  # Ensure buffer is closed on error
             logger.warning(f"⚠️ Whisper transcription failed: {e}")
             return "فشل في التسجيل"
 
@@ -743,6 +743,36 @@ class EnhancedOmaniTherapyApp:
         self.therapist = EnhancedTherapist(config)
         self.tts = TTSPlayer(config)
         self.risk_assessor = EnhancedRiskAssessor(config)
+        self.emergency_contacts = []
+
+    def add_emergency_contact(self, email: str):
+        """Add an emergency contact"""
+        if not email:
+            logger.warning("⚠️ Invalid emergency contact details")
+            return
+        
+        self.emergency_contacts.append(email)
+        logger.info(f"✅ Emergency contact added: {email}")
+    
+    def remove_emergency_contact(self, email: str):
+        """Remove an emergency contact"""
+        if email in self.emergency_contacts:
+            self.emergency_contacts.remove(email)
+            logger.info(f"✅ Emergency contact removed: {email}")
+        else:
+            logger.warning(f"⚠️ Emergency contact not found: {email}")
+    
+    def notify_emergency_contacts(self, message: str):
+        """Notify emergency contacts in case of critical risk"""
+        if not self.emergency_contacts:
+            logger.warning("⚠️ No emergency contacts to notify")
+            return
+        
+        for contact in self.emergency_contacts:
+            # Here you would implement actual notification logic (email, SMS, etc.)
+            logger.info(f"📧 Notifying {contact}: {message}")
+        
+        logger.info("✅ Emergency contacts notified successfully")
         
     def _process_audio_pipeline(self, audio) -> Tuple[str, str]:
         """Optimized audio processing pipeline"""
@@ -762,6 +792,10 @@ class EnhancedOmaniTherapyApp:
                 risk_assessment = risk_future.result(timeout=8)
                 
                 logger.info(f"🎯 Risk Assessment: {risk_assessment}")
+                if risk_assessment["risk_level"] == "CRITICAL":
+                    self.notify_emergency_contacts(
+                        f"🚨 Critical risk detected: {risk_assessment['emotion']} - {transcript[:50]}..."
+                    )
                 
                 response_future = executor.submit(self.therapist.respond, transcript, risk_assessment)
                 response = response_future.result(timeout=15)
