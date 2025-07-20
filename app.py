@@ -59,5 +59,10 @@ with gr.Blocks() as demo:
     input_audio.stop_recording(response, [state], [output_audio, state, chatbot])
     #output_audio.stop(lambda s: gr.Audio(recording=True), [state], [input_audio])
 
-demo.launch(server_name="0.0.0.0", server_port=7000) 
+app = gr.mount_gradio_app(app, demo, path="/gradio")
+
+# Redirect root '/' to '/gradio'
+@app.get("/")
+def redirect_to_gradio():
+    return RedirectResponse(url="/gradio")
 
