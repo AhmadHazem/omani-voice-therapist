@@ -143,7 +143,6 @@ class Config:
         
         self.whisper_prompt = (
             "نسخ الصوت بالعربية والإنجليزية كما هو منطوق."
-            "Transcribe the audio in Arabic and English as spoken."
             "You may recieve English Words or Phrases in the Audio, so you should transcribe them in English."
         )
         
