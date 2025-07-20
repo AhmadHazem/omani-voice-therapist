@@ -10,11 +10,13 @@ from typing import Dict, List, Optional, Tuple
 from enum import Enum
 from functools import lru_cache
 from dataclasses import dataclass
+import io
 
 import numpy as np
 import sounddevice as sd
 import keyboard
 from scipy.io.wavfile import write
+import soundfile as sf
 from openai import OpenAI
 import anthropic
 import azure.cognitiveservices.speech as speechsdk
@@ -554,6 +556,34 @@ class WhisperTranscriber:
             logger.warning(f"⚠️ Whisper transcription failed: {e}")
             return "فشل في التسجيل"
 
+    def TranscribeStream(self, audio_tuple) -> str:
+        import io
+        import soundfile as sf
+
+        sample_rate, audio_np = audio_tuple
+
+        # Convert NumPy array to WAV in-memory
+        buffer = io.BytesIO()
+        sf.write(buffer, audio_np, samplerate=sample_rate, format='WAV')
+        buffer.seek(0)
+
+        # Wrap the buffer with filename and MIME type
+        buffer.name = "audio.wav"  # Important for format recognition
+
+        try:
+            transcript = self.client.audio.transcriptions.create(
+                model=self.config.audio.whisper_model,
+                file=buffer,
+                prompt=self.config.whisper_prompt,
+                language="ar",
+                response_format="text",
+                timeout=10
+            )
+            return transcript
+        except Exception as e:
+            logger.warning(f"⚠️ Whisper transcription failed: {e}")
+            return "فشل في التسجيل"
+
 
 # 🧠 Enhanced Therapist
 class EnhancedTherapist:
@@ -711,14 +741,14 @@ class EnhancedOmaniTherapyApp:
         self.tts = TTSPlayer(config)
         self.risk_assessor = EnhancedRiskAssessor(config)
         
-    def _process_audio_pipeline(self, audio_path: str) -> Tuple[str, str]:
+    def _process_audio_pipeline(self, audio) -> Tuple[str, str]:
         """Optimized audio processing pipeline"""
         start_time = time.time()
         
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 # Transcribe audio
-                transcript_future = executor.submit(self.transcriber.transcribe, audio_path)
+                transcript_future = executor.submit(self.transcriber.TranscribeStream, audio)
                 transcript = transcript_future.result(timeout=15)
                 
                 if not transcript or transcript == "فشل في التسجيل":
