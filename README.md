@@ -8,12 +8,6 @@ A culturally-sensitive, voice-only therapeutic chatbot tailored for Omani Arabic
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
 
 ## 🌟 Overview
 
