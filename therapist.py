@@ -331,7 +331,6 @@ class CBTDecisionMaker:
             )
             result = json.loads(response.content[0].text)
             self._cache[cache_key] = result
-            logger.info(f"📥 CBT decision made: {result}")
             return result
         except Exception as e:
             logger.warning(f"⚠️ CBT decision making failed: {e}")
@@ -646,7 +645,6 @@ class EnhancedTherapist:
         Technique to help user: {cbt_technique}
         Reasoning for this technique: {reasoning}
         """
-        print(enhanced_prompt)
         # Try GPT first, fallback to Claude
         try:
             response = self._get_gpt_response(enhanced_prompt)
