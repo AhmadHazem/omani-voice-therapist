@@ -78,7 +78,7 @@ def format_contact_list(contacts):
 def clear_conversation(state):
     """Clear the conversation history"""
     state.conversation = []
-    omaniTherapyApp.clear_conversation()
+    omaniTherapyApp.therapist.clear_conversation()
     return state, []
 
 # Custom CSS for better Arabic support and styling
