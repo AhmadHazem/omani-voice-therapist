@@ -469,6 +469,7 @@ class WhisperTranscriber:
             transcript = self.client.audio.transcriptions.create(
                 model=self.config.audio.whisper_model,
                 file=buffer,
+                prompt= self.config.whisper_prompt,
                 language="ar",
                 response_format="text",
                 timeout=10
