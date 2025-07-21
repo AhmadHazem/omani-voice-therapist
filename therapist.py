@@ -483,18 +483,24 @@ class WhisperTranscriber:
 
 # 🧠 Enhanced Therapist
 class EnhancedTherapist:
-    """Main therapist class with AI integration"""
     
     def __init__(self, config: Config):
         self.config = config
         self.claude = anthropic.Anthropic(api_key=config.claude_api_key)
         self.openai = OpenAI(api_key=config.openai_api_key)
         self.cbt_decision_maker = CBTDecisionMaker(config)
+        self.conversation_history = [{"role": "system", "content": config.system_prompt}]
         self.memory = ConversationBufferWindowMemory(k=config.performance.memory_window)
         self.executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=config.performance.max_workers
         )
         
+    def clear_conversation(self):
+        """Clear conversation history"""
+        self.conversation_history = [{"role": "system", "content": self.config.system_prompt}]
+        self.memory.clear()
+        logger.info("🗑️ Conversation history cleared.")
+
     def _get_cbt_context_parallel(self, emotion: str, transcript: str, cbt_decision: Dict) -> str:
         """Get CBT context in parallel"""
         if not cbt_decision["use_cbt"]:
@@ -548,12 +554,10 @@ class EnhancedTherapist:
     
     def _get_gpt_response(self, prompt: str):
         """Get response from GPT model"""
+        self.conversation_history.append({"role": "user", "content": prompt})
         return self.openai.chat.completions.create(
             model=self.config.model.gpt_model,
-            messages=[
-                {"role": "system", "content": self.config.system_prompt},
-                {"role": "user", "content": prompt}
-            ],
+            messages= self.conversation_history,
             temperature=self.config.model.gpt_temp,
             max_tokens=self.config.performance.max_tokens,
             timeout=self.config.performance.timeout_seconds
@@ -561,13 +565,14 @@ class EnhancedTherapist:
     
     def _get_claude_response(self, prompt: str) -> str:
         """Get response from Claude model"""
+        self.conversation_history.append({"role": "user", "content": prompt})
         try:
             response = self.claude.messages.create(
                 model=self.config.model.claude_model,
                 max_tokens=self.config.performance.max_tokens,
                 temperature=self.config.model.claude_temp,
                 system=self.config.system_prompt,
-                messages=[{"role": "user", "content": prompt}],
+                messages= self.conversation_history[1:],
                 timeout=self.config.performance.timeout_seconds
             )
             return response.content[0].text

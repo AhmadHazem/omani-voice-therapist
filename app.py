@@ -78,6 +78,7 @@ def format_contact_list(contacts):
 def clear_conversation(state):
     """Clear the conversation history"""
     state.conversation = []
+    omaniTherapyApp.clear_conversation()
     return state, []
 
 # Custom CSS for better Arabic support and styling
@@ -176,6 +177,22 @@ custom_css = """
     padding: 15px;
     background: linear-gradient(145deg, #fff5f5, #ffe8e8);
 }
+
+/* Clear button styling */
+.clear-button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: bold !important;
+    border-radius: 10px !important;
+    padding: 10px 20px !important;
+    transition: all 0.3s ease !important;
+}
+
+.clear-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4) !important;
+}
 """
 
 with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذكي | AI Therapist", theme=gr.themes.Soft()) as demo:
@@ -264,7 +281,7 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
             )
     
         with gr.Column(scale=2):
-            # Conversation section
+            # Conversation section with clear button
             gr.HTML("""<div class="section-header">💬 سجل المحادثة | Conversation History</div>""")
             
             with gr.Row():
@@ -276,6 +293,13 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
                         elem_id="chatbot",
                         rtl=True
                     )
+            with gr.Row(scale=1):
+                clear_chat_btn = gr.Button(
+                    "🗑️ مسح المحادثة\nClear Chat",
+                    variant="stop",
+                    elem_classes=["clear-button"],
+                    size="lg"
+                )
     
     # Footer with additional info
     gr.HTML("""
@@ -318,6 +342,12 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         outputs=[remove_contact_btn]
     )
     
+    # Clear conversation event handler
+    clear_chat_btn.click(
+        fn=clear_conversation,
+        inputs=[state],
+        outputs=[state, chatbot]
+    )
     
     # Original event handlers (unchanged)
     input_audio.stream(
