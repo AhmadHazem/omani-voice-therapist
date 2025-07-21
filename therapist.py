@@ -136,8 +136,10 @@ class Config:
         self.cbt_decision_prompt = (
             "أنت خبير في العلاج المعرفي السلوكي (CBT). مهمتك هي تحليل النص والعاطفة "
             "وتحديد ما إذا كان استخدام تقنيات CBT مناسباً أم لا.\n"
+
             "Strictly Respond with a JSON object containing:\n"
-            "Follow strictly this format without any additional symbols or texts:\n"
+            "- use_cbt: boolean (true/false)\n"
+            "Follow strictly this format when replying in JSON without any additional symbols or texts and include all keys in the upcoming example:\n"
             "{\"use_cbt\": true/false, \"cbt_technique\": \"اسم التقنية المناسبة أو null\", \"reasoning\": \"سبب القرار باللغة العربية\", \"severity\": \"low/medium/high\"}\n"
         )
         
@@ -287,6 +289,7 @@ class CBTDecisionMaker:
     def __init__(self, config: Config):
         self.config = config
         self.client = OpenAI(api_key=config.openai_api_key)
+        self.claude = anthropic.Anthropic(api_key=config.claude_api_key)
         self._cache = {}
         
     def should_use_cbt(self, transcript: str, emotion: str, risk_level: str) -> Dict:
@@ -298,18 +301,19 @@ class CBTDecisionMaker:
         prompt = f"النص: {transcript}\nالعاطفة: {emotion}\nمستوى الخطورة: {risk_level}\n\nحدد استخدام CBT:"
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.model.gpt_model,
-                messages=[
-                    {"role": "system", "content": self.config.cbt_decision_prompt},
-                    {"role": "user", "content": prompt}
-                ],
+
+            response = self.claude.messages.create(
+                model=self.config.model.claude_model,
+                max_tokens=500,
                 temperature=0.1,
-                max_tokens=100,
-                timeout=5
+                system=self.config.cbt_decision_prompt,
+                messages=[
+                    {"role": "user", "content": prompt}
+                    ],
+                timeout=self.config.performance.timeout_seconds
             )
-            
-            result = json.loads(response.choices[0].message.content)
+            print(response.content[0].text)
+            result = json.loads(response.content[0].text)
             self._cache[cache_key] = result
             logger.info(f"📥 CBT decision made: {result}")
             return result
@@ -453,8 +457,6 @@ class AudioRecorder:
         # Save to temporary file
         temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         try:
-            # Use scipy.io.wavfile to write the audio file
-            from scipy.io.wavfile import write
             write(temp_audio.name, self.sample_rate, audio_data)
             logger.info(f"💾 Audio saved to: {temp_audio.name}")
             return temp_audio.name
@@ -484,7 +486,6 @@ class AudioRecorder:
             
             # Save to temporary file
             temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-            from scipy.io.wavfile import write
             write(temp_audio.name, self.sample_rate, audio_data)
             
             logger.info(f"💾 Fixed duration audio saved to: {temp_audio.name}")
@@ -556,8 +557,6 @@ class WhisperTranscriber:
             return "فشل في التسجيل"
 
     def TranscribeStream(self, audio_tuple) -> str:
-        import io
-        import soundfile as sf
 
         sample_rate, audio_np = audio_tuple
 
