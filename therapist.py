@@ -136,8 +136,10 @@ class Config:
         self.cbt_decision_prompt = (
             "أنت خبير في العلاج المعرفي السلوكي (CBT). مهمتك هي تحليل النص والعاطفة "
             "وتحديد ما إذا كان استخدام تقنيات CBT مناسباً أم لا.\n"
+
             "Strictly Respond with a JSON object containing:\n"
-            "Follow strictly this format without any additional symbols or texts:\n"
+            "- use_cbt: boolean (true/false)\n"
+            "Follow strictly this format when replying in JSON without any additional symbols or texts and include all keys in the upcoming example:\n"
             "{\"use_cbt\": true/false, \"cbt_technique\": \"اسم التقنية المناسبة أو null\", \"reasoning\": \"سبب القرار باللغة العربية\", \"severity\": \"low/medium/high\"}\n"
         )
         
@@ -169,17 +171,6 @@ class RiskLevel(Enum):
     CRITICAL = "critical"
 
 
-class CBTTechnique(Enum):
-    COGNITIVE_RESTRUCTURING = "cognitive_restructuring"
-    BEHAVIORAL_ACTIVATION = "behavioral_activation"
-    EXPOSURE_THERAPY = "exposure_therapy"
-    MINDFULNESS = "mindfulness"
-    PROBLEM_SOLVING = "problem_solving"
-    RELAXATION = "relaxation"
-    THOUGHT_CHALLENGING = "thought_challenging"
-    ACTIVITY_SCHEDULING = "activity_scheduling"
-
-
 # 🧠 CBT Knowledge Base
 class CBTKnowledgeBase:
     """Enhanced CBT Knowledge Base with caching and optimization"""
@@ -196,54 +187,83 @@ class CBTKnowledgeBase:
     def _load_cbt_data(self) -> Dict:
         """Load CBT knowledge base with Arabic content"""
         return {
-            "cognitive_restructuring": {
-                "name": "إعادة البناء المعرفي",
-                "description": "تقنية لتحديد وتعديل الأفكار السلبية",
-                "techniques": [
-                    "تحديد الأفكار التلقائية السلبية",
-                    "فحص الأدلة المؤيدة والمعارضة",
-                    "إيجاد أفكار بديلة أكثر واقعية"
-                ],
-                "suitable_for": ["depression", "anxiety", "anger", "low_self_esteem"],
-                "arabic_content": "إعادة البناء المعرفي تقنية أساسية لمساعدة الشخص على تحديد الأفكار السلبية وتعديلها بطريقة منطقية.",
-                "cultural_adaptation": "مراعاة القيم الإسلامية والثقافة العمانية مع التركيز على التوكل والدعاء."
-            },
-            "behavioral_activation": {
-                "name": "التفعيل السلوكي",
-                "description": "زيادة الأنشطة الممتعة لتحسين المزاج",
-                "techniques": [
-                    "جدولة الأنشطة الممتعة",
-                    "تحديد الأهداف الصغيرة",
-                    "مراقبة المزاج والأنشطة"
-                ],
-                "suitable_for": ["depression", "apathy", "isolation"],
-                "arabic_content": "التفعيل السلوكي يساعد على استعادة الاهتمام بالحياة من خلال الأنشطة الممتعة والمعنوية.",
-                "cultural_adaptation": "تضمين الأنشطة الدينية والاجتماعية المناسبة للثقافة العمانية."
-            },
-            "mindfulness": {
-                "name": "الوعي التام",
-                "description": "التركيز على اللحظة الحالية وقبول المشاعر",
-                "techniques": [
-                    "التنفس العميق",
-                    "التأمل الإسلامي",
-                    "مراقبة الأفكار والمشاعر"
-                ],
-                "suitable_for": ["anxiety", "stress", "overthinking"],
-                "arabic_content": "الوعي التام يعني التركيز على اللحظة الحالية وقبول المشاعر دون أحكام.",
-                "cultural_adaptation": "دمج الذكر والتسبيح كأشكال من الوعي التام المناسبة للثقافة الإسلامية."
-            },
-            "problem_solving": {
-                "name": "حل المشكلات",
-                "description": "منهج منظم لتحليل المشكلات وإيجاد حلول",
-                "techniques": [
-                    "تحديد المشكلة بوضوح",
-                    "عصف ذهني للحلول",
-                    "تقييم الخيارات المتاحة"
-                ],
-                "suitable_for": ["stress", "relationship_issues", "work_problems"],
-                "arabic_content": "حل المشكلات منهج منظم يساعد على مواجهة التحديات بطريقة منطقية وعملية.",
-                "cultural_adaptation": "مراعاة القيم الأسرية والاجتماعية العمانية مع التأكيد على الاستشارة والشورى."
-            }
+          "cognitive_restructuring": {
+            "name": "إعادة البناء المعرفي",
+            "description": "تقنية لتحديد وتعديل الأفكار السلبية",
+            "techniques": [
+              "تحديد الأفكار التلقائية السلبية",
+              "فحص الأدلة المؤيدة والمعارضة",
+              "إيجاد أفكار بديلة أكثر واقعية",
+              "تصنيف أنواع التشوهات المعرفية",
+              "كتابة الأفكار اليومية وتأمل بدائل إيجابية"
+            ],
+            "suitable_for": ["depression", "anxiety", "anger", "low_self_esteem"],
+            "arabic_content": "تقنية أساسية لمساعدة الشخص على تعديل الأفكار السلبية بطريقة منطقية.",
+            "cultural_adaptation": "توظيف القيم الإسلامية مثل التفاؤل والتوكل والدعاء."
+          },
+          "behavioral_activation": {
+            "name": "التفعيل السلوكي",
+            "description": "زيادة الأنشطة الممتعة لتحسين المزاج",
+            "techniques": [
+              "جدولة الأنشطة الممتعة والمعنوية",
+              "تحديد الأهداف الشخصية والدينية",
+              "مراقبة المزاج والأنشطة",
+              "تقييم الإنجازات الأسبوعية"
+            ],
+            "suitable_for": ["depression", "apathy", "isolation"],
+            "arabic_content": "استعادة الاهتمام بالحياة من خلال أنشطة ذات معنى.",
+            "cultural_adaptation": "إدراج زيارات عائلية وأنشطة اجتماعية وثقافية عُمانية."
+          },
+          "mindfulness": {
+            "name": "الوعي التام",
+            "description": "التركيز على اللحظة الحالية وقبول المشاعر",
+            "techniques": [
+              "التنفس العميق",
+              "التأمل الإسلامي",
+              "مراقبة الأفكار والمشاعر",
+              "ترديد الذكر والتسبيح أثناء التأمل"
+            ],
+            "suitable_for": ["anxiety", "stress", "overthinking"],
+            "arabic_content": "التركيز على اللحظة وقبول الذات دون أحكام.",
+            "cultural_adaptation": "استخدام الذكر كوسيلة للسكينة والهدوء الذهني."
+          },
+          "problem_solving": {
+            "name": "حل المشكلات",
+            "description": "منهج منظم لتحليل المشكلات وإيجاد حلول",
+            "techniques": [
+              "تحديد المشكلة بوضوح",
+              "عصف ذهني للحلول",
+              "تقييم الخيارات المتاحة",
+              "نموذج اتخاذ القرار الجماعي"
+            ],
+            "suitable_for": ["stress", "relationship_issues", "work_problems"],
+            "arabic_content": "منهج منطقي يساعد على مواجهة التحديات.",
+            "cultural_adaptation": "تشجيع الحوار الأسري والاستشارة وفق قيم الشورى."
+          },
+          "social_skills_training": {
+            "name": "التدريب على المهارات الاجتماعية",
+            "description": "تعزيز التواصل بين الأفراد والقدرة على التعبير بثقة",
+            "techniques": [
+              "تمارين الحوار الفعّال",
+              "محاكاة مواقف اجتماعية واقعية",
+              "تعزيز احترام الذات والآخرين"
+            ],
+            "suitable_for": ["social_anxiety", "relationship_issues", "low_self_esteem"],
+            "arabic_content": "يساعد في تحسين التفاعل مع الآخرين وبناء علاقات صحية.",
+            "cultural_adaptation": "مراعاة العادات الاجتماعية وأدوار التواصل الثقافية."
+          },
+          "emotion_regulation": {
+            "name": "تنظيم المشاعر",
+            "description": "مهارات لفهم المشاعر الشديدة والتعامل معها بفعالية",
+            "techniques": [
+              "تحديد المحفزات والانفعالات المرتبطة بها",
+              "تمارين التهدئة الذاتية",
+              "تقييم الاستجابة العاطفية وتعديلها"
+            ],
+            "suitable_for": ["anger", "anxiety", "mood_swings"],
+            "arabic_content": "مهارات تساعد في التحكم بالمشاعر والتصرف بشكل مدروس.",
+            "cultural_adaptation": "الاستفادة من مفاهيم الصبر وضبط النفس الإسلامية."
+          }
         }
     
     def _build_vector_store(self):
@@ -264,16 +284,16 @@ class CBTKnowledgeBase:
         self.vector_store = FAISS.from_documents(documents, self.embeddings)
         logger.info("✅ CBT knowledge base vector store created")
     
-    def retrieve_relevant_cbt(self, emotion: str, query: str, k: int = 1) -> List[Document]:
+    def retrieve_relevant_cbt(self, emotion: str, query: str, k: int = 4) -> List[Document]:
         """Retrieve relevant CBT techniques with caching"""
-        cache_key = f"{emotion}_{hash(query)}"
+        cache_key = f"{hash(query)}"
         if cache_key in self._cache:
             return self._cache[cache_key]
             
         if not self.vector_store:
             return []
         
-        search_query = f"{emotion} {query[:100]}"
+        search_query = f"{query[:100]}"
         relevant_docs = self.vector_store.similarity_search(search_query, k=k)
         
         self._cache[cache_key] = relevant_docs
@@ -287,6 +307,7 @@ class CBTDecisionMaker:
     def __init__(self, config: Config):
         self.config = config
         self.client = OpenAI(api_key=config.openai_api_key)
+        self.claude = anthropic.Anthropic(api_key=config.claude_api_key)
         self._cache = {}
         
     def should_use_cbt(self, transcript: str, emotion: str, risk_level: str) -> Dict:
@@ -298,18 +319,17 @@ class CBTDecisionMaker:
         prompt = f"النص: {transcript}\nالعاطفة: {emotion}\nمستوى الخطورة: {risk_level}\n\nحدد استخدام CBT:"
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.model.gpt_model,
-                messages=[
-                    {"role": "system", "content": self.config.cbt_decision_prompt},
-                    {"role": "user", "content": prompt}
-                ],
+            response = self.claude.messages.create(
+                model=self.config.model.claude_model,
+                max_tokens=500,
                 temperature=0.1,
-                max_tokens=100,
-                timeout=5
+                system=self.config.cbt_decision_prompt,
+                messages=[
+                    {"role": "user", "content": prompt}
+                    ],
+                timeout=self.config.performance.timeout_seconds
             )
-            
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response.content[0].text)
             self._cache[cache_key] = result
             logger.info(f"📥 CBT decision made: {result}")
             return result
@@ -453,8 +473,6 @@ class AudioRecorder:
         # Save to temporary file
         temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         try:
-            # Use scipy.io.wavfile to write the audio file
-            from scipy.io.wavfile import write
             write(temp_audio.name, self.sample_rate, audio_data)
             logger.info(f"💾 Audio saved to: {temp_audio.name}")
             return temp_audio.name
@@ -484,7 +502,6 @@ class AudioRecorder:
             
             # Save to temporary file
             temp_audio = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-            from scipy.io.wavfile import write
             write(temp_audio.name, self.sample_rate, audio_data)
             
             logger.info(f"💾 Fixed duration audio saved to: {temp_audio.name}")
@@ -556,8 +573,6 @@ class WhisperTranscriber:
             return "فشل في التسجيل"
 
     def TranscribeStream(self, audio_tuple) -> str:
-        import io
-        import soundfile as sf
 
         sample_rate, audio_np = audio_tuple
 
@@ -615,36 +630,23 @@ class EnhancedTherapist:
         emotion = risk_assessment["emotion"]
         risk_level = risk_assessment["risk_level"]
         intensity = risk_assessment.get("emotional_intensity", 1)
+        cultural_context = risk_assessment.get("cultural_context", "غير محدد")
         
         # Parallel processing for CBT decision and context
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                cbt_future = executor.submit(
-                    self.cbt_decision_maker.should_use_cbt, 
-                    transcript, emotion, risk_level
-                )
-                
-                cbt_decision = cbt_future.result(timeout=5)
-                
-                cbt_context = ""
-                if cbt_decision["use_cbt"]:
-                    cbt_context = self._get_cbt_context_parallel(emotion, transcript, cbt_decision)
-        
-        except concurrent.futures.TimeoutError:
-            logger.warning("⚠️ Parallel processing timeout")
-            cbt_decision = {"use_cbt": False, "cbt_technique": None, "reasoning": "timeout", "severity": "low"}
-            cbt_context = ""
+        cbt_decision = self.cbt_decision_maker.should_use_cbt(transcript, emotion, risk_level)
+        reasoning  = cbt_decision.get("reasoning", "غير محدد")
+        cbt_technique = cbt_decision.get("cbt_technique", None)
         
         # Prepare prompt
         enhanced_prompt = f"""
         المستخدم: {transcript}
         
         الحالة: {emotion} ({intensity}/10) - {risk_level}
-        CBT: {cbt_decision['use_cbt']} - {cbt_decision.get('cbt_technique', 'لا يوجد')}
-        
-        {cbt_context}
+        CBT: {cbt_decision['use_cbt']}
+        Technique to help user: {cbt_technique}
+        Reasoning for this technique: {reasoning}
         """
-        
+        print(enhanced_prompt)
         # Try GPT first, fallback to Claude
         try:
             response = self._get_gpt_response(enhanced_prompt)
@@ -779,14 +781,14 @@ class EnhancedOmaniTherapyApp:
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 # Transcribe audio
                 transcript_future = executor.submit(self.transcriber.TranscribeStream, audio)
-                transcript = transcript_future.result(timeout=15)
+                transcript = transcript_future.result(timeout=None)
                 
                 if not transcript or transcript == "فشل في التسجيل":
                     return transcript, "عذراً، لم أتمكن من فهم التسجيل. يرجى المحاولة مرة أخرى."
                 
                 # Assess risk and generate response
                 risk_future = executor.submit(self.risk_assessor.assess, transcript)
-                risk_assessment = risk_future.result(timeout=8)
+                risk_assessment = risk_future.result(timeout=None)
                 
                 logger.info(f"🎯 Risk Assessment: {risk_assessment}")
                 if risk_assessment["risk_level"] == "CRITICAL":
@@ -795,7 +797,7 @@ class EnhancedOmaniTherapyApp:
                     )
                 
                 response_future = executor.submit(self.therapist.respond, transcript, risk_assessment)
-                response = response_future.result(timeout=15)
+                response = response_future.result(timeout=None)
                 
                 logger.info(f"💬 Total processing time: {time.time() - start_time:.2f}s")
                 return transcript, response

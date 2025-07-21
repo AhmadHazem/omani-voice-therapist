@@ -346,11 +346,11 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         [output_audio, state, chatbot]
     )
 
-demo.launch()
+# demo.launch()
 
-# app = gr.mount_gradio_app(app, demo, path="/gradio")
+app = gr.mount_gradio_app(app, demo, path="/gradio")
 
-# # Redirect root '/' to '/gradio'
-# @app.get("/")
-# def redirect_to_gradio():
-#     return RedirectResponse(url="/gradio")
+# Redirect root '/' to '/gradio'
+@app.get("/")
+def redirect_to_gradio():
+    return RedirectResponse(url="/gradio")
