@@ -171,135 +171,6 @@ class RiskLevel(Enum):
     CRITICAL = "critical"
 
 
-# 🧠 CBT Knowledge Base
-class CBTKnowledgeBase:
-    """Enhanced CBT Knowledge Base with caching and optimization"""
-    
-    def __init__(self, config: Config):
-        self.config = config
-        self.embeddings = OpenAIEmbeddings(openai_api_key=os.environ.get("OPENAI_API_KEY"))
-        self.vector_store = None
-        self.cbt_data = self._load_cbt_data()
-        self._build_vector_store()
-        self._cache = {}
-        
-    @lru_cache(maxsize=128)
-    def _load_cbt_data(self) -> Dict:
-        """Load CBT knowledge base with Arabic content"""
-        return {
-          "cognitive_restructuring": {
-            "name": "إعادة البناء المعرفي",
-            "description": "تقنية لتحديد وتعديل الأفكار السلبية",
-            "techniques": [
-              "تحديد الأفكار التلقائية السلبية",
-              "فحص الأدلة المؤيدة والمعارضة",
-              "إيجاد أفكار بديلة أكثر واقعية",
-              "تصنيف أنواع التشوهات المعرفية",
-              "كتابة الأفكار اليومية وتأمل بدائل إيجابية"
-            ],
-            "suitable_for": ["depression", "anxiety", "anger", "low_self_esteem"],
-            "arabic_content": "تقنية أساسية لمساعدة الشخص على تعديل الأفكار السلبية بطريقة منطقية.",
-            "cultural_adaptation": "توظيف القيم الإسلامية مثل التفاؤل والتوكل والدعاء."
-          },
-          "behavioral_activation": {
-            "name": "التفعيل السلوكي",
-            "description": "زيادة الأنشطة الممتعة لتحسين المزاج",
-            "techniques": [
-              "جدولة الأنشطة الممتعة والمعنوية",
-              "تحديد الأهداف الشخصية والدينية",
-              "مراقبة المزاج والأنشطة",
-              "تقييم الإنجازات الأسبوعية"
-            ],
-            "suitable_for": ["depression", "apathy", "isolation"],
-            "arabic_content": "استعادة الاهتمام بالحياة من خلال أنشطة ذات معنى.",
-            "cultural_adaptation": "إدراج زيارات عائلية وأنشطة اجتماعية وثقافية عُمانية."
-          },
-          "mindfulness": {
-            "name": "الوعي التام",
-            "description": "التركيز على اللحظة الحالية وقبول المشاعر",
-            "techniques": [
-              "التنفس العميق",
-              "التأمل الإسلامي",
-              "مراقبة الأفكار والمشاعر",
-              "ترديد الذكر والتسبيح أثناء التأمل"
-            ],
-            "suitable_for": ["anxiety", "stress", "overthinking"],
-            "arabic_content": "التركيز على اللحظة وقبول الذات دون أحكام.",
-            "cultural_adaptation": "استخدام الذكر كوسيلة للسكينة والهدوء الذهني."
-          },
-          "problem_solving": {
-            "name": "حل المشكلات",
-            "description": "منهج منظم لتحليل المشكلات وإيجاد حلول",
-            "techniques": [
-              "تحديد المشكلة بوضوح",
-              "عصف ذهني للحلول",
-              "تقييم الخيارات المتاحة",
-              "نموذج اتخاذ القرار الجماعي"
-            ],
-            "suitable_for": ["stress", "relationship_issues", "work_problems"],
-            "arabic_content": "منهج منطقي يساعد على مواجهة التحديات.",
-            "cultural_adaptation": "تشجيع الحوار الأسري والاستشارة وفق قيم الشورى."
-          },
-          "social_skills_training": {
-            "name": "التدريب على المهارات الاجتماعية",
-            "description": "تعزيز التواصل بين الأفراد والقدرة على التعبير بثقة",
-            "techniques": [
-              "تمارين الحوار الفعّال",
-              "محاكاة مواقف اجتماعية واقعية",
-              "تعزيز احترام الذات والآخرين"
-            ],
-            "suitable_for": ["social_anxiety", "relationship_issues", "low_self_esteem"],
-            "arabic_content": "يساعد في تحسين التفاعل مع الآخرين وبناء علاقات صحية.",
-            "cultural_adaptation": "مراعاة العادات الاجتماعية وأدوار التواصل الثقافية."
-          },
-          "emotion_regulation": {
-            "name": "تنظيم المشاعر",
-            "description": "مهارات لفهم المشاعر الشديدة والتعامل معها بفعالية",
-            "techniques": [
-              "تحديد المحفزات والانفعالات المرتبطة بها",
-              "تمارين التهدئة الذاتية",
-              "تقييم الاستجابة العاطفية وتعديلها"
-            ],
-            "suitable_for": ["anger", "anxiety", "mood_swings"],
-            "arabic_content": "مهارات تساعد في التحكم بالمشاعر والتصرف بشكل مدروس.",
-            "cultural_adaptation": "الاستفادة من مفاهيم الصبر وضبط النفس الإسلامية."
-          }
-        }
-    
-    def _build_vector_store(self):
-        """Build FAISS vector store from CBT knowledge"""
-        documents = []
-        for technique_id, technique_data in self.cbt_data.items():
-            content = f"{technique_data['name']}: {technique_data['description']} - {technique_data['arabic_content']}"
-            doc = Document(
-                page_content=content,
-                metadata={
-                    "technique_id": technique_id,
-                    "name": technique_data['name'],
-                    "suitable_for": technique_data['suitable_for']
-                }
-            )
-            documents.append(doc)
-        
-        self.vector_store = FAISS.from_documents(documents, self.embeddings)
-        logger.info("✅ CBT knowledge base vector store created")
-    
-    def retrieve_relevant_cbt(self, emotion: str, query: str, k: int = 4) -> List[Document]:
-        """Retrieve relevant CBT techniques with caching"""
-        cache_key = f"{hash(query)}"
-        if cache_key in self._cache:
-            return self._cache[cache_key]
-            
-        if not self.vector_store:
-            return []
-        
-        search_query = f"{query[:100]}"
-        relevant_docs = self.vector_store.similarity_search(search_query, k=k)
-        
-        self._cache[cache_key] = relevant_docs
-        return relevant_docs
-
-
 # 🎯 CBT Decision Maker
 class CBTDecisionMaker:
     """Determines when to use CBT techniques"""
@@ -319,17 +190,28 @@ class CBTDecisionMaker:
         prompt = f"النص: {transcript}\nالعاطفة: {emotion}\nمستوى الخطورة: {risk_level}\n\nحدد استخدام CBT:"
         
         try:
-            response = self.claude.messages.create(
-                model=self.config.model.claude_model,
+            # response = self.claude.messages.create(
+            #     model=self.config.model.claude_model,
+            #     max_tokens=500,
+            #     temperature=0.1,
+            #     system=self.config.cbt_decision_prompt,
+            #     messages=[
+            #         {"role": "user", "content": prompt}
+            #         ],
+            #     timeout=self.config.performance.timeout_seconds
+            # )
+            response = self.client.chat.completions.create(
+                model=self.config.model.gpt_model,
                 max_tokens=500,
                 temperature=0.1,
-                system=self.config.cbt_decision_prompt,
                 messages=[
+                    {"role": "system", "content": self.config.cbt_decision_prompt},
                     {"role": "user", "content": prompt}
-                    ],
+                ],
                 timeout=self.config.performance.timeout_seconds
             )
-            result = json.loads(response.content[0].text)
+            result = json.loads(response.choices[0].message.content)
+            # result = json.loads(response.content[0].text)
             self._cache[cache_key] = result
             return result
         except Exception as e:
@@ -607,7 +489,6 @@ class EnhancedTherapist:
         self.config = config
         self.claude = anthropic.Anthropic(api_key=config.claude_api_key)
         self.openai = OpenAI(api_key=config.openai_api_key)
-        self.cbt_knowledge = CBTKnowledgeBase(config)
         self.cbt_decision_maker = CBTDecisionMaker(config)
         self.memory = ConversationBufferWindowMemory(k=config.performance.memory_window)
         self.executor = concurrent.futures.ThreadPoolExecutor(
@@ -636,6 +517,7 @@ class EnhancedTherapist:
         reasoning  = cbt_decision.get("reasoning", "غير محدد")
         cbt_technique = cbt_decision.get("cbt_technique", None)
         
+        logger.info(f"🔍 CBT Decision: {cbt_decision['use_cbt']} - Technique: {cbt_technique} - Reasoning: {reasoning}")
         # Prepare prompt
         enhanced_prompt = f"""
         المستخدم: {transcript}

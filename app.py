@@ -276,13 +276,6 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
                         elem_id="chatbot",
                         rtl=True
                     )
-                with gr.Column(scale=1):
-                    clear_chat_btn = gr.Button(
-                        "🗑️ مسح المحادثة\nClear Chat", 
-                        variant="secondary",
-                        elem_classes=["emergency-container"],
-                        size="sm"
-                    )
     
     # Footer with additional info
     gr.HTML("""
@@ -325,12 +318,6 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         outputs=[remove_contact_btn]
     )
     
-    # Clear conversation handler
-    clear_chat_btn.click(
-        fn=clear_conversation,
-        inputs=[state],
-        outputs=[state, chatbot]
-    )
     
     # Original event handlers (unchanged)
     input_audio.stream(
@@ -346,11 +333,11 @@ with gr.Blocks(css=custom_css, title="🧠 المعالج النفسي الذك�
         [output_audio, state, chatbot]
     )
 
-# demo.launch()
+demo.launch()
 
-app = gr.mount_gradio_app(app, demo, path="/gradio")
+# app = gr.mount_gradio_app(app, demo, path="/gradio")
 
-# Redirect root '/' to '/gradio'
-@app.get("/")
-def redirect_to_gradio():
-    return RedirectResponse(url="/gradio")
+# # Redirect root '/' to '/gradio'
+# @app.get("/")
+# def redirect_to_gradio():
+#     return RedirectResponse(url="/gradio")
