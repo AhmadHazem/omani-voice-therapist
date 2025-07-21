@@ -538,12 +538,12 @@ class EnhancedTherapist:
             response = self._get_gpt_response(enhanced_prompt)
             logger.info(f"📥 GPT response received in {time.time() - start_time:.2f}s")
             result = response.choices[0].message.content
-            
+            self.conversation_history.append({"role": "assistant", "content": result})
         except Exception as e:
             logger.warning(f"⚠️ GPT failed: {e}")
             result = self._get_claude_response(enhanced_prompt)
             logger.info(f"✅ Claude fallback complete in {time.time() - start_time:.2f}s")
-        
+            self.conversation_history.append({"role": "assistant", "content": result})
         # Update memory
         self.memory.save_context(
             {"input": transcript[:100]}, 
