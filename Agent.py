@@ -39,12 +39,6 @@ ClaudeSonnet3_7 = ChatAnthropic(temperature= 0, model_name= claude_model, stream
     )
 )
 
-## Intailzing Langchain 
-os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_PROJECT"] = "omani-therapist-voice"
-
 ## Azure Speech Services API Key
 SPEECH_KEY =  os.getenv("SPEECH_KEY")
 SPEECH_ENDPOINT = os.getenv("ENDPOINT")
