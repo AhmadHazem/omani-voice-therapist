@@ -10,7 +10,6 @@ from enum import Enum
 from functools import lru_cache
 from dataclasses import dataclass
 import io
-
 import numpy as np
 import sounddevice as sd
 import keyboard
@@ -754,3 +753,4 @@ class EnhancedOmaniTherapyApp:
 # if __name__ == "__main__":
 
 #     main()
+
