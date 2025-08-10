@@ -13,9 +13,8 @@ import asyncio
 import gradio as gr
 
 app = FastAPI()
-transcriber = WhisperTranscriber()
 speaker = Speaker()
-
+transcriber = WhisperTranscriber()
 
 class AppState:
     stream: np.ndarray | None = None
@@ -72,9 +71,9 @@ async def response(audio, state):
     buffer_threshold = 1000  # Batching threshold
     reply = ""
 
-    async for token in therapist_chat(user_prompt, timeout=12, session_id= state.session_id, emergency_contacts= state.emergency_contacts):
-        buffer += token.content
-        state.conversation[-1][1] += token.content  # Update chatbot text live
+    async for token in therapist_chat(user_prompt, timeout=12, session_id= "abc123", emergency_contacts= state.emergency_contacts):
+        buffer += token
+        state.conversation[-1][1] += token  # Update chatbot text live
 
         if len(buffer) > buffer_threshold or buffer.endswith((".", "!", "?", "،",'\n')):
             reply += buffer
@@ -115,10 +114,10 @@ with gr.Blocks() as demo:
     input_audio.stop_recording(response, [input_audio,state], [output_audio, state, chatbot])
     clear_btn.click(fn=clear_conversation, inputs=[state], outputs=[output_audio, chatbot, state])
 
-demo.launch()
-# app = gr.mount_gradio_app(app, demo, path="/gradio")
+# demo.launch()
+app = gr.mount_gradio_app(app, demo, path="/gradio")
 
-# # Redirect root '/' to '/gradio'
-# @app.get("/")
-# def redirect_to_gradio():
-#     return RedirectResponse(url="/gradio")
+# Redirect root '/' to '/gradio'
+@app.get("/")
+def redirect_to_gradio():
+    return RedirectResponse(url="/gradio")
