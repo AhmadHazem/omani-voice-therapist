@@ -68,7 +68,7 @@ source omani_env/bin/activate    # On Linux/macOS
 # omani_env\Scripts\activate     # Uncomment for Windows
 
 # Clone the repository
-git clone -b ForLocalTesting https://github.com/AhmadHazem/omani-voice-therapist.git
+git clone https://github.com/AhmadHazem/omani-voice-therapist.git
 cd omani-voice-therapist
 
 # Install dependencies
@@ -155,3 +155,4 @@ Ensure your microphone and speakers are properly configured for optimal voice in
 - **Docker**: Build and run containers locally or in the cloud
 
 **Note**: This tool is designed to supplement, not replace, professional mental health care. Please consult qualified mental health professionals for serious concerns.
+
