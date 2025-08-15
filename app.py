@@ -40,7 +40,8 @@ def estimate_audio_duration(audio_bytes: bytes, sampling_rate: int = 16000) -> f
 def clear_conversation(state):
     state.conversation = []
     state.stream = None
-    chat_map[state.session_id].clear()
+    if state.session_id in chat_map:
+        chat_map[state.session_id].clear()
     return None, state.conversation, state
 
 def process_audio(audio, state):
@@ -120,5 +121,4 @@ app = gr.mount_gradio_app(app, demo, path="/gradio")
 # Redirect root '/' to '/gradio'
 @app.get("/")
 def redirect_to_gradio():
-
     return RedirectResponse(url="/gradio")

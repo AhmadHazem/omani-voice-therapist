@@ -172,14 +172,21 @@ class StructuredRiskAssessorTemplate(BaseModel):
     severity: str = Field(description=
                                     "This is a variable, where will you fill it with you predication about the severity" \
                                     "of the emotion - it should be eith LOW/MED/HIGH/CRIT.")
-    user_problem: str = Field(description= 
-                                    "This variable will contain the reason/problem behind this user's emotion. " \
-                                    "If not mentioned, then state that it is non mentioned.")
+    diagnosis: str = Field(description= 
+                                    "This variable will contain the diagnosis behind this user's emotion. " \
+                                    "It has to be a Hierarchical Diagnosis something similar to those examples but not explicitly from فاثة: " \
+                                    "الحالات النفسية السلوكية - مشاكل النوم - أحلام اليقظة" \
+                                    "الأمراض الذهانية - مشاكل الفصام والذهان - الفصام" \
+                                    "الأمراض المزاجية - الاكتئاب - الاكتئاب الحاد" \
+                                    "الأمراض القلقية - القلق العام - اضطراب الهلع" \
+    
+                                    "If not mentioned, then state that it is non mentioned."
+                                    "")
     user_prompt: str = Field(description= 
                                     "This variable will contain the user's original prompt, " \
                                     "so just copy it as it is and put in that variable.")
-    cbt_technique: str = Field(description="This variable will contain the suggested (CBT) to help the user")
-    reason_for_technique: str = Field(description= "This varaible will contain the reason behind picking that CBT, and how can it help")
+    cbt_technique: str = Field(description="This variable will contain the suggested (CBT) to help the user pick one of the CBT techniques here. Do not keep using CBT اعادة الهيكلة المعرفية" )
+    reason_for_technique: str = Field(description= "This varaible will contain the reason behind picking that CBT, and how can it help. Explain more how it can help in no more than 100 words and provide examples on how to apply it")
     cultural_context: str = Field(description="This variable will contain how can Omani and Islamic values can help the user in his emotional problem")
 
 ## ====================================================================================================================|
@@ -280,7 +287,7 @@ class Therpaist:
                 "requires_analysis": lambda x: x.requires_analysis,
                 "user_emotion": lambda x: x.user_emotion,
                 "severity": lambda x: x.severity,
-                "user_problem": lambda x:x.user_problem,
+                "diagnosis": lambda x:x.diagnosis,
                 "user_prompt": lambda x:x.user_prompt,
                 "cbt_technique": lambda x:x.cbt_technique,
                 "reason_for_technique" : lambda x:x.reason_for_technique,
@@ -295,7 +302,7 @@ class Therpaist:
                 "requires_analysis": lambda x: x['requires_analysis'],
                 "user_emotion": lambda x: x['user_emotion'],
                 "severity": lambda x: x['severity'],
-                "user_problem": lambda x:x['user_problem'],
+                "diagnosis": lambda x:x['diagnosis'],
                 "user_prompt": lambda x:x['user_prompt'],
                 "cbt_technique": lambda x:x['cbt_technique'],
                 "reason_for_technique" : lambda x:x['reason_for_technique'],
