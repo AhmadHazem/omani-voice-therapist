@@ -71,7 +71,7 @@ async def response(audio, state):
     buffer_threshold = 1000  # Batching threshold
     reply = ""
 
-    async for token in therapist_chat(user_prompt, timeout=12, session_id= "abc123", emergency_contacts= state.emergency_contacts):
+    async for token in therapist_chat(user_prompt, timeout=12, session_id= state.session_id, emergency_contacts= state.emergency_contacts):
         buffer += token
         state.conversation[-1][1] += token  # Update chatbot text live
 
@@ -120,4 +120,5 @@ app = gr.mount_gradio_app(app, demo, path="/gradio")
 # Redirect root '/' to '/gradio'
 @app.get("/")
 def redirect_to_gradio():
+
     return RedirectResponse(url="/gradio")
